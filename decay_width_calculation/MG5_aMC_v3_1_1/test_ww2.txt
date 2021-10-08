@@ -1,0 +1,9 @@
+import model MLRSM
+generate w2+ > all all QED=1 QCD=0
+output Test_MLRSM_WR_2body_width --noeps=True
+launch
+set MW2 scan1:[3000,1000]
+set MN4 scan1:[3000,1000]
+set MN5 scan1:[3000,1000]
+set MN6 scan1:[3000,1000]
+done

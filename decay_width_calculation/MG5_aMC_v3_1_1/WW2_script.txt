@@ -1,0 +1,11 @@
+import model MLRSM
+define j p t t~ b b~
+define bsmhiggs h h2 h02 h03 h+ hp2 hl++ hr++ h3 a02 h- hm2 hl-- hr--
+generate w2+ > all all QED=1 QCD=0
+output Test_MLRSM_WR_2body_width_noscan --noeps=True
+launch
+set MW2 1000 #scan1:[3000,4000]
+set MN4 1000 #scan1:[3000,4000]
+set MN5 1000 #scan1:[3000,4000]
+set MN6 1000 #scan1:[3000,4000]
+done

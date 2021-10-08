@@ -1,0 +1,16 @@
+import model MLRSM
+define j p t t~ b b~
+define bsmhiggs h h2 h02 h03 h+ hp2 hl++ hr++ h3 a02 h- hm2 hl-- hr--
+generate p p > mu+ mu+ j j / bsmhiggs w+ w- @1
+add process p p > mu- mu- j j / bsmhiggs w+ w- @2
+output ../simulations/test_1_1
+launch
+shower=pythia8
+set MW2 = 1000
+set MN4 = 1000
+set MN5 = 1000
+set MN6 = 1000
+set WW2 = auto
+set WN4 = auto
+set WN5 = auto
+set WN6 = auto

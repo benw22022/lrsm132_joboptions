@@ -1,0 +1,161 @@
+#************************************************************
+#*                     MadGraph5_aMC@NLO                    *
+#*                                                          *
+#*                *                       *                 *
+#*                  *        * *        *                   *
+#*                    * * * * 5 * * * *                     *
+#*                  *        * *        *                   *
+#*                *                       *                 *
+#*                                                          *
+#*                                                          *
+#*         VERSION 3.1.1                 2021-05-28         *
+#*                                                          *
+#*    The MadGraph5_aMC@NLO Development Team - Find us at   *
+#*    https://server06.fynu.ucl.ac.be/projects/madgraph     *
+#*                                                          *
+#************************************************************
+#*                                                          *
+#*               Command File for MadGraph5_aMC@NLO         *
+#*                                                          *
+#*     run as ./bin/mg5_aMC  filename                       *
+#*                                                          *
+#************************************************************
+set group_subprocesses Auto
+set ignore_six_quark_processes False
+set low_mem_multicore_nlo_generation False
+set complex_mass_scheme False
+set include_lepton_initiated_processes False
+set gauge unitary
+set loop_optimized_output True
+set loop_color_flows False
+set max_npoint_for_channel 0
+set default_unset_couplings 99
+set max_t_for_channel 99
+set zerowidth_tchannel True
+set nlo_mixed_expansion True
+Traceback (most recent call last):
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/extended_cmd.py", line 1544, in onecmd
+    return self.onecmd_orig(line, **opt)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/extended_cmd.py", line 1493, in onecmd_orig
+    return func(arg, **opt)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/madevent_interface.py", line 2466, in do_generate_events
+    switch_mode = self.ask_run_configuration(mode, args)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/madevent_interface.py", line 6266, in ask_run_configuration
+    self.ask_edit_cards(cards, plot=False, first_cmd=first_cmd)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/common_run_interface.py", line 992, in ask_edit_cards
+    self.ask_edit_card_static(cards, mode, plot, self.options['timeout'],
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/common_run_interface.py", line 1064, in ask_edit_card_static
+    out = ask(question, '0', possible_answer, timeout=int(1.5*timeout),
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/extended_cmd.py", line 1135, in ask
+    question_instance.postcmd(answer, line)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/common_run_interface.py", line 6113, in postcmd
+    self.do_update('dependent', timer=20)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/common_run_interface.py", line 6159, in do_update
+    self.do_compute_widths('')
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/common_run_interface.py", line 6530, in do_compute_widths
+    out = self.mother_interface.do_compute_widths(line)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/common_run_interface.py", line 2330, in do_compute_widths
+    out = cmd.exec_cmd(line, model=opts['model'])
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/extended_cmd.py", line 1573, in exec_cmd
+    stop = Cmd.onecmd_orig(current_interface, line, **opt)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/extended_cmd.py", line 1493, in onecmd_orig
+    return func(arg, **opt)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/master_interface.py", line 346, in do_compute_widths
+    return self.cmd.do_compute_widths(self, *args, **opts)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/madgraph_interface.py", line 8654, in do_compute_widths
+    self.exec_cmd('output madevent %s -f' % decay_dir,child=False)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/extended_cmd.py", line 1573, in exec_cmd
+    stop = Cmd.onecmd_orig(current_interface, line, **opt)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/extended_cmd.py", line 1493, in onecmd_orig
+    return func(arg, **opt)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/master_interface.py", line 299, in do_output
+    self.cmd.do_output(self, line, *args, **opts)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/madgraph_interface.py", line 8139, in do_output
+    self.export(nojpeg, main_file_name, group_processes, args)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/master_interface.py", line 313, in export
+    return self.cmd.export(self, *args, **opts)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/madgraph_interface.py", line 8269, in export
+    ndiags, cpu_time = generate_matrix_elements(self,group_processes)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/interface/madgraph_interface.py", line 8249, in generate_matrix_elements
+    self._curr_matrix_elements = HelasMultiProcessClass(
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/core/helas_objects.py", line 5580, in __init__
+    self.set('matrix_elements', self.generate_matrix_elements(argument,
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/core/helas_objects.py", line 5810, in generate_matrix_elements
+    amplitude_tag = IdentifyMETag.create_tag(amplitude)
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/core/helas_objects.py", line 115, in create_tag
+    perms = [array.array('H',
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/core/helas_objects.py", line 116, in <listcomp>
+    sum([comp_dict[n] for n in p.get_external_numbers()], []))
+  File "/afs/cern.ch/work/b/bewilson/MG3.1/MG5_aMC_v3_1_1/madgraph/core/helas_objects.py", line 116, in <listcomp>
+    sum([comp_dict[n] for n in p.get_external_numbers()], []))
+KeyError: 2
+                          MadGraph5_aMC@NLO Options    
+                          ----------------    
+        complex_mass_scheme 	:	False
+    default_unset_couplings 	:	99 (user set)
+                      gauge 	:	unitary
+         group_subprocesses 	:	Auto
+  ignore_six_quark_processes 	:	False
+  include_lepton_initiated_processes 	:	False
+           loop_color_flows 	:	False
+      loop_optimized_output 	:	True
+  low_mem_multicore_nlo_generation 	:	False
+     max_npoint_for_channel 	:	0 (user set)
+          max_t_for_channel 	:	99 (user set)
+        nlo_mixed_expansion 	:	True
+               stdout_level 	:	20 (user set)
+         zerowidth_tchannel 	:	True
+
+                         MadEvent Options    
+                          ----------------    
+     automatic_html_opening 	:	False (user set)
+                    nb_core 	:	10 (user set)
+        notification_center 	:	True
+                   run_mode 	:	2
+
+                      Configuration Options    
+                      ---------------------    
+                        OLP 	:	MadLoop
+   acknowledged_v3.1_syntax 	:	False
+         auto_convert_model 	:	False
+                auto_update 	:	7 (user set)
+         cluster_local_path 	:	None
+           cluster_nb_retry 	:	1
+              cluster_queue 	:	None (user set)
+         cluster_retry_wait 	:	300
+               cluster_size 	:	100
+      cluster_status_update 	:	(600, 30)
+          cluster_temp_path 	:	None
+               cluster_type 	:	condor
+                    collier 	:	./HEPTools/lib
+               cpp_compiler 	:	None
+             crash_on_error 	:	False
+               delphes_path 	:	None (user set)
+                 eps_viewer 	:	None
+        exrootanalysis_path 	:	None (user set)
+              f2py_compiler 	:	None
+          f2py_compiler_py2 	:	None
+          f2py_compiler_py3 	:	None
+                    fastjet 	:	None (user set)
+           fortran_compiler 	:	None
+                      golem 	:	None (user set)
+                 hepmc_path 	:	None (user set)
+                  hwpp_path 	:	None (user set)
+                     lhapdf 	:	lhapdf-config
+                 lhapdf_py2 	:	None
+                 lhapdf_py3 	:	None
+          madanalysis5_path 	:	None (user set)
+           madanalysis_path 	:	None (user set)
+  mg5amc_py8_interface_path 	:	None (user set)
+                      ninja 	:	./HEPTools/lib
+        output_dependencies 	:	external
+                   pineappl 	:	pineappl
+            pythia-pgs_path 	:	None (user set)
+               pythia8_path 	:	None (user set)
+                    samurai 	:	None
+               syscalc_path 	:	None (user set)
+                    td_path 	:	None (user set)
+                text_editor 	:	None
+                thepeg_path 	:	None (user set)
+                    timeout 	:	60
+                web_browser 	:	None

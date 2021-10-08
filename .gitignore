@@ -1,2 +1,20 @@
+# Ignore all junk related to decay width calculation
 */__pycache__
 */decay_width_calculation/*/*
+*.decay_width_calculation
+*.f
+*.jpg
+*.html
+*.fo
+*.o
+*.inc
+*MakeFile
+*.sym
+*gensym
+*.ps
+*.log
+*to_be_deleted
+*.gz
+*.lhe
+*.root
+
