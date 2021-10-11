@@ -17,4 +17,5 @@
 *.gz
 *.lhe
 *.root
+*.sh
 

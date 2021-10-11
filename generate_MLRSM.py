@@ -17,7 +17,7 @@ args:
     -VKmu       : Muon flavour heavy-light mixing parameter
     -VKta       : Tau flavour heavy-light mixing parameter
     -VK         : Sets the mixing value of VKe, VKmu, VKta to the same number (so that you don't have to individually specify them if you don't need to)
-    -k1         : Indirectly sets the probablity of the WR-WL vertex. k1 = 246 GeV turns off vertex; k1 = 174.09 GeV sets it to maximum
+    -tanb       : Indirectly controls WL-WR mixing: tanb = 0 for no mixing, tanb = 1 for maximal mixing
 Example:
     To run a DSID -> python3 generate_MLRSM.py -DSID=100001
     Otherwise if no DSID exists -> python3 generate_MLRSM.py -channel=mumuchannel_WRWR -MW2=1 -MN1=1 -MN2=1 -MN3=1
@@ -82,6 +82,17 @@ class GreaterThanNumberAction(argparse.Action):
 
         setattr(namespace, self.dest, values)
 
+class Bewteen0And1Action(argparse.Action):
+    """
+    A helper class to enforce numbers between 0 and 1 in arguement parser
+    """
+    def __call__(self, parser, namespace, values, option_string=None,  number=0):
+        if 0 <= values <= 1:
+            parser.error("Argument {0} must be between 0 and 1".format(option_string))
+
+        setattr(namespace, self.dest, values)
+
+
 
 def main():
 
@@ -101,8 +112,8 @@ def main():
     parser.add_argument("-VKmu", help="Left-Right mixing for muon flavour", action=GreaterThanNumberAction, type=float, default=0)
     parser.add_argument("-VKta", help="Left-Right mixing for tau flavour", action=GreaterThanNumberAction, type=float, default=0)
     parser.add_argument("-VK", help="Left-Right mixing, same for all flavours", action=GreaterThanNumberAction, type=float, default=0)
-    parser.add_argument("-k1", help="Indirectly controls probability of WR-WL vertex: k1 = 246 GeV for no vertex. k1 = 174.09 GeV fully enables WR-WL vertex", 
-                        action=GreaterThanNumberAction, type=float, default=246)
+    parser.add_argument("-tanb", help="Indirectly controls WR-WL mixing: tanb = 0 for no mixing; tanb = 1 for maximal mixing", 
+                        action=Bewteen0And1Action, type=float, default=0)
     parser.add_argument("-WW2", help="Decay width of WR in GeV", type=str, default="auto")
     parser.add_argument("-WN1", help="Decay width of N4 in GeV", type=str, default="auto")
     parser.add_argument("-WN2", help="Decay width of N4 in GeV", type=str, default="auto")
@@ -111,6 +122,7 @@ def main():
     parser.add_argument("-nevents", help="Number of events to generate", action=GreaterThanNumberAction, type=int, default=10000)
     parser.add_argument("-randomN", help="Random seed for MC Generator", action=GreaterThanNumberAction, type=int, default=123456)
     parser.add_argument("-batch", help="Run on batch system", type=bool, default=False)
+    parser.add_argument("-testmatch", help="Extend the time on batch system to 3 days", type=bool, default=False)
     args = parser.parse_args()
 
     # Command to setup enviroment
@@ -124,9 +136,9 @@ export ATHENA_PROC_NUMBER=8 \n
 """
 
     # Set directory to run in
-    run_dir = "run"
+    run_dir = "../run"
     if args.batch:
-        run_dir = "batch"
+        run_dir = "../batch"
 
         #  Check that user has changed the submit file to their email if they plan on using the batch system
         if getpass.getuser() != "bewilson":
@@ -172,16 +184,6 @@ export ATHENA_PROC_NUMBER=8 \n
     # =========================================== #
     elif (args.MW2 > 0 and args.MN1 > 0 and args.MN2 > 0 and args.MN3 > 0) or args.MN > 0:
 
-        # Check that scattering type and k1 are consistent
-        if args.k1 != 246 and "WRWR" in args.channel:
-            print("generate_MLRSM.py: ERROR - Inconsitant arguements")
-            print(f"Channel requested is WR-WR scattering but WR-WL vertices are enabled through the setting of k1 = {args.k1}")
-            return 1
-        if args.k1 == 246:
-            if "_WLWR" in args.channel or "_WRWL" in args.channel:
-                print("generate_MLRSM.py: INFO - WR-WL vertex in requested channel but k1 is not set. Will fully enable vertex by setting k1 = 174.09 GeV")
-                args.k1 = 174.09
-
         # Check if MN arguement has been given to set MN1/5/6
         if args.MN > 0:
             if args.MN1 > 0 or args.MN2 > 0 or args.MN3 > 0:
@@ -194,23 +196,11 @@ export ATHENA_PROC_NUMBER=8 \n
                 print("generate_MLRSM.py: INFO - -VK arguement given. Will ignore all -VKe/mu/ta arguments")
             args.VKe = args.VKmu = args.VKta = args.VK
 
-            if "WRWR" in args.channel:
-                print("generate_MLRSM.py: ERROR - Inconsitant arguements")
-                print(f"Channel requested is WR-WR scattering but WR-WL vertices are enabled through the setting of VK")
-                return 1
-
-        # # Check decay_widths.csv for decay widths
-        # with open("decay_width_calculation/decay_widths.csv", 'r') as file:
-        #     for line in file:
-        #         line = line.split(",").replace(" ", "")
-        #         if line[0] == args.MW2
-
-
         # Make directory to run in and copy files over
         run_path = make_dir(run_dir)
         os.system(f"cp -r CommonFiles/* {run_path}")
         os.system(f"mkdir {run_path}/JO")
-        _, JO_path = make_job_option(args.channel, args.MW2, args.MN1, args.MN2, args.MN3, args.VKe, args.VKmu, args.VKta, args.k1, WW2=args.WW2, WN4=args.WN1, WN5=args.WN2, WN6=args.WN3, lhaid=args.lhaid)
+        _, JO_path = make_job_option(args.channel, args.MW2, args.MN1, args.MN2, args.MN3, args.VKe, args.VKmu, args.VKta, args.tanb, WW2=args.WW2, WN4=args.WN1, WN5=args.WN2, WN6=args.WN3, lhaid=args.lhaid)
         os.system(f"cp {JO_path} {run_path}/JO")
 
         # Work out what to call the outfile. For compactness just write the maximal mixing value to file name
@@ -221,7 +211,7 @@ export ATHENA_PROC_NUMBER=8 \n
         
         # Work out command to run and change directory to run directory
         print(f"generate_MLRSM.py: INFO - Generating channel = {args.channel}, MW2 = {args.MW2}TeV, MN1 = {args.MN1}TeV, MN2 = {args.MN2}TeV, MN3 = {args.MN3}TeV")
-        print(f"generate_MLRSM.py: INFO - Mixing parameters are: VKe = {args.VKe}, VKmu = {args.VKmu}, VKta = {args.VKta}, k1 = {args.k1} GeV")
+        print(f"generate_MLRSM.py: INFO - Mixing parameters are: VKe = {args.VKe}, VKmu = {args.VKmu}, VKta = {args.VKta}, tanb = {args.tanb} GeV")
         gen_command =f"Gen_tf.py --ignorePatterns=\"attempt to add a duplicate\" --ecmEnergy=13000. --maxEvents={str(args.nevents)} --firstEvent=1 --randomSeed={str(args.randomN)} --outputEVNTFile={outfile} --jobConfig=${PWD}/JO --asetup=''"
         full_command = setup_command + gen_command 
         os.chdir(run_path)
@@ -230,7 +220,10 @@ export ATHENA_PROC_NUMBER=8 \n
         if args.batch:  
             # If generation is to be done on HT Condor System
             make_batch_exe(full_command, transfer_dir="/eos/user/b/bewilson/EVNT_samples/"+outfile.replace(".root", ""))
-            os.system(f"condor_submit -batch-name MLRSM_Generation htc_generation.submit")
+            if args.testmatch:
+                os.system(f"condor_submit -batch-name MLRSM_Generation htc_generation_long.submit")
+            else:
+                os.system(f"condor_submit -batch-name MLRSM_Generation htc_generation.submit")
         else:
             # Otherwise generate locally
             os.system(full_command)
@@ -241,5 +234,4 @@ export ATHENA_PROC_NUMBER=8 \n
         return 1
 
 if __name__ == "__main__":
-    
     main()

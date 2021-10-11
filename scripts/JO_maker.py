@@ -52,11 +52,11 @@ def arg_parse():
                         help='Production channel to generate')                    
     parser.add_argument('WR_mass', metavar='MW2', type=float, nargs='+',
                         help='Mass of Heavy WR-Boson in TeV')
-    parser.add_argument('N4_mass', metavar='MN4', type=float, nargs='+',
+    parser.add_argument('N4_mass', metavar='MN1', type=float, nargs='+',
                         help='Mass of Heavy Neutrino N4 in TeV')
-    parser.add_argument('N5_mass', metavar='MN5', type=float, nargs='+',
+    parser.add_argument('N5_mass', metavar='MN2', type=float, nargs='+',
                         help='Mass of Heavy Neutrino N5 in TeV')                    
-    parser.add_argument('N6_mass', metavar='MN6', type=float, nargs='+',
+    parser.add_argument('N6_mass', metavar='MN3', type=float, nargs='+',
                         help='Mass of Heavy Neutrino N6 in TeV')                                    
     args = parser.parse_args()
 
@@ -65,7 +65,7 @@ def arg_parse():
     if is_available_proccess(input_args["channel"][0]):
         return input_args        
 
-def template_JO(channel, MW2, MN4, MN5, MN6, VKe, VKmu, VKta, k1, dsid=None, WW2='auto', WN4='auto', WN5='auto', WN6='auto', lhaid=260000):
+def template_JO(channel, MW2, MN1, MN2, MN3, VKe, VKmu, VKta, tanb, dsid=None, WW2='auto', WN4='auto', WN5='auto', WN6='auto', lhaid=260000):
     """
     Template code for job option
     args:
@@ -73,11 +73,11 @@ def template_JO(channel, MW2, MN4, MN5, MN6, VKe, VKmu, VKta, k1, dsid=None, WW2
             Production channel to use (as defined in available_proccess.py)
         Mw2 (float):
             Mass of heavy WR-boson in Tev
-        MN4 (float):
+        MN1 (float):
             Mass of heavy neutrino N4 in TeV
-        MN5 (float):
+        MN2 (float):
             Mass of heavy neutrino N5 in TeV
-        MN6 (float):
+        MN3 (float):
             Mass of heavy neutrino N6 in TeV
         VKe (float):
             Heavy-Light mixing parameter for electron flavour
@@ -85,10 +85,10 @@ def template_JO(channel, MW2, MN4, MN5, MN6, VKe, VKmu, VKta, k1, dsid=None, WW2
             Heavy-Light mixing parameter for muon flavour
         VKta (float):
             Heavy-Light mixing parameter for tau flavour
-        k1 (float):
+        tanb (float):
             Controls the chances of getting a WR-WL vertex. 
-            k1 = 246 for no WR-WL vertex
-            k1 = 174.09 for maximal chance of vertex
+            tanb = 246 for no WR-WL vertex
+            tanb = 174.09 for maximal chance of vertex
     returns:
         job_option_script (str):
             Long string containing job option code
@@ -109,8 +109,8 @@ def template_JO(channel, MW2, MN4, MN5, MN6, VKe, VKmu, VKta, k1, dsid=None, WW2
     if "incl_higgs" in channel:
         additional_opts += "\nHiggs sector included in simulation"
 
-    job_title = f"Job option for MLRSM p p -> {lep} {lep} j j (MW2 = {MW2}TeV,  MN4 = {MN4}TeV, MN5 = {MN5}TeV, MN6 = {MN6}TeV) {additional_opts}"
-    job_title += f"\nMixing parameters: VKe = {VKe}   VKmu = {VKmu}   VKta = {VKta}    k1 = {k1} GeV"
+    job_title = f"Job option for MLRSM p p -> {lep} {lep} j j (MW2 = {MW2}TeV,  MN1 = {MN1}TeV, MN2 = {MN2}TeV, MN3 = {MN3}TeV) {additional_opts}"
+    job_title += f"\nMixing parameters: VKe = {VKe}   VKmu = {VKmu}   VKta = {VKta}    tanb = {tanb} GeV"
     job_title += f"\nDecay Widths are: WW2 = {WW2}    WN4 = {WN4}   WN5 = {WN5}    WN6 = {WN6}"
 
     if dsid is not None:
@@ -145,6 +145,7 @@ MLRSMCommon.parameters_paramcard['mass']['MN3'] = {6}
 MLRSMCommon.parameters_paramcard['klrblock']['vke'] = {7}
 MLRSMCommon.parameters_paramcard['klrblock']['vkmu'] = {8}
 MLRSMCommon.parameters_paramcard['klrblock']['vkta'] = {9}
+MLRSMCommon.parameters_paramcard['vevs']['tanb'] = {10}
 MLRSMCommon.parameters_paramcard['decay']['WW2'] = "{11}"    # No idea why these have to be strings - BLAME MadGraph!
 MLRSMCommon.parameters_paramcard['decay']['WN1'] = "{12}"    # No idea why these have to be strings - BLAME MadGraph!
 MLRSMCommon.parameters_paramcard['decay']['WN2'] = "{13}"    # No idea why these have to be strings - BLAME MadGraph!
@@ -153,7 +154,7 @@ MLRSMCommon.parameters_runcard['lhaid'] = {15}
 
 
 MLRSMCommon.run_evgen(runArgs, evgenConfig, opts)
-'''.format(job_title, todays_date, channel, MW2*1e3, MN4*1e3, MN5*1e3, MN6*1e3, VKe, VKmu, VKta, k1, str(WW2), str(WN4), str(WN5), str(WN6), lhaid)
+'''.format(job_title, todays_date, channel, MW2*1e3, MN1*1e3, MN2*1e3, MN3*1e3, VKe, VKmu, VKta, tanb, str(WW2), str(WN4), str(WN5), str(WN6), lhaid)
 
     return job_option_script
 
@@ -180,64 +181,7 @@ def make_directory(dir_name):
             print("JO_maker.py: ERROR - {}".format(error))
     return 1
 
-
-def check_positive_float(number):
-    """
-    Simple function to check if a number is a positive float or not 
-    args:
-        number (N/A):
-            The variable to be checked 
-    returns:
-        (bool):
-            Returns True if number is a positive float, False otherwise
-    """
-    try:
-        number_float = float(number)
-        if number_float >= 0:
-            return True
-        else:
-            print("JO_maker.py: ERROR - input must be a positive number")
-            return False
-    except ValueError:
-        print("JO_maker.py: ERROR - Input must be a number")
-        return False
-
-def check_JO_args(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass):
-    """
-    Function to check if job option args are valid
-    args:
-    requested_channel (str):
-        Proccess generation channel requested by user (must be one available in available_proccess.py)
-    w2_mass (float):
-        Mass of heavy WR-boson in TeV
-    n4_mass (float):
-        Mass of heavy neutrino N4
-    n5_mass (float):
-        Mass of heavy neutrino N5
-    n6_mass (float):
-        Mass of heavy neutrino N6
-    returns:
-        (bool):
-            Returns True if all arguements are valid, False otherwise
-    """
-    if not is_available_proccess(requested_channel):
-        print("JO_maker.py: ERROR - requested channel ({0}) not available".format(requested_channel))
-        return False
-    if not check_positive_float(w2_mass):
-        print("JO_maker.py: ERROR - W2 Mass must be a positive float")
-        return False
-    if not check_positive_float(n4_mass):
-        print("JO_maker.py: ERROR - N4 Mass must be a positive float")
-        return False
-    if not check_positive_float(n5_mass):
-        print("JO_maker.py: ERROR - N5 Mass must be a positive float")
-        return False
-    if not check_positive_float(n6_mass):
-        print("JO_maker.py: ERROR - N6 Mass must be a positive float")
-        return False
-    return True
-
-def make_job_option(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, VKe, VKmu, VKta, k1, dsid=None, WW2='auto', WN4='auto', WN5='auto', WN6='auto', lhaid=260000):
+def make_job_option(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, VKe, VKmu, VKta, tanb, dsid=None, WW2='auto', WN4='auto', WN5='auto', WN6='auto', lhaid=260000):
     """
     Makes new job option
     Creates a folder for channel (if it doesn't already exist)
@@ -262,10 +206,6 @@ def make_job_option(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, VKe, 
                         1 - failure
                         2 - job option already exists
     """
-    # Check args
-    if not check_JO_args(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass):
-        print("JO_maker.py: ERROR - Invalid job option arguments")
-        return 1, "ERROR"
 
     if dsid is None:
         # Try creating a JO directory for channel first 
@@ -273,6 +213,7 @@ def make_job_option(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, VKe, 
         if channel_mkdir_code == 1:
             print("JO_maker.py: ERROR - Unable to make directory for proccess channel - Exiting")
             return 1, "ERROR"
+
         # Make subdirectory for specific mass point
         mass_point_dir = requested_channel+"/{0}-{1}-{2}-{3}-{4}-{5}".format(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, max([VKe, VKmu, VKta]))
 
@@ -293,7 +234,7 @@ def make_job_option(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, VKe, 
         else:
             channel_short += "H0"
 
-        phys_short = f"lrsm132_{channel_short}{w2_mass}{max([n4_mass, n5_mass, n6_mass])}{max([VKe, VKmu, VKta])}{k1}".replace(".", "d")    # Athena naming convention prohibits '.' in JO name
+        phys_short = f"lrsm132_{channel_short}{w2_mass}{max([n4_mass, n5_mass, n6_mass])}{max([VKe, VKmu, VKta])}{tanb}".replace(".", "d")    # Athena naming convention prohibits '.' in JO name
         JO_filename = f"mc.aMGPy8EG_{phys_short}.py"
         JO_path = mass_point_dir + "/" + JO_filename
 
@@ -305,36 +246,14 @@ def make_job_option(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, VKe, 
         if masspoint_mkdir_code == 1:
             print("JO_maker.py: ERROR - Unable to make directory for mass point - Exiting")
             return 1, "ERROR"
-        if masspoint_mkdir_code == 2:
-            print("JO_maker.py: INFO - Job option already exists")
-            return 2, JO_path
-
     else:
         make_directory(f"100xxx/{dsid}")
         JO_path = f"100xxx/{dsid}/mc.aMGPy8EG_MLRSM_{dsid}.py"
 
     # Make job option script
-    JO_script = template_JO(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, VKe, VKmu, VKta, k1, dsid=None, WW2=WW2, WN4=WN4, WN5=WN5, WN6=WN6, lhaid=lhaid)
+    JO_script = template_JO(requested_channel, w2_mass, n4_mass, n5_mass, n6_mass, VKe, VKmu, VKta, tanb, dsid=None, WW2=WW2, WN4=WN4, WN5=WN5, WN6=WN6, lhaid=lhaid)
     JO_file = open(JO_path ,"w")
     JO_file.write(JO_script)
     JO_file.close()
 
     return 0, JO_path
-
-
-def stand_alone_run():
-    args = arg_parse()
-    channel = args["channel"][0]
-    MW2 = args["WR_mass"][0]
-    MN4 = args["N4_mass"][0]
-    MN5 = args["N5_mass"][0]
-    MN6 = args["N6_mass"][0]
-    VKe = args["VKe_mixing"][0]
-    VKmu = args["VKmu_mixing"][0]
-    VKta = args["VKta_mixing"][0]
-    k1 = args["Controls WR-WL Vertex"][0]
-    make_job_option(channel, MW2, MN4, MN5, MN6, VKe, VKmu, VKta, k1)
-    return 0
-
-if __name__ == "__main__":
-    stand_alone_run()

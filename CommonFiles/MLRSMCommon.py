@@ -39,10 +39,10 @@ parameters_runcard = {
 parameters_paramcard = {
     # Calculates decay widths'auto',
     'decay':{
-        'WW2': "7.888838e+01", #'auto',
-        'WN1': "0.2061", #'auto',
-        'WN1': "0.2061", #'auto',
-        'WN1': "0.2061", #'auto',
+        'WW2': 'auto',
+        'WN1': 'auto',
+        'WN1': 'auto',
+        'WN1': 'auto',
     },
     # Sets masses of the WR and the 3 Heavy Neutrinos
     'mass':{
@@ -57,9 +57,10 @@ parameters_paramcard = {
         'vkmu': 0,
         'vkta': 0,
     },
-    # Indirectly controls the WR-WL vertex
-    # Default value k1 = 246 GeV disables WR-WL vertex
-    # Value k1 = 1174.09 GeV fully enables WR-WL vertex
+    # Sets amount of WL-WR mixing
+    'vevs':{
+        'tanb': 0
+    }
 }
 
 
@@ -77,7 +78,7 @@ def run_evgen(runArgs, evgenConfig, opts):
     evgenConfig.description = 'test run'
     evgenConfig.keywords+=['BSM','exotic','neutrino'] # list of allowed keywords: https://gitlab.cern.ch/atlas-physics/pmg/infrastructure/mc15joboptions/blob/master/common/evgenkeywords.txt
     evgenConfig.generators += ["aMcAtNlo", "Pythia8", "EvtGen"]
-    evgenConfig.process = 'pp -> mu mu j j'  # TODO: Don't Hard Code this
+    evgenConfig.process = 'p p ->  same-sign l l j j'
     evgenConfig.inputconfcheck=""
     evgenConfig.contact = ["Ben Wilson <benjamin.james.wilson@cern.ch"]
     runArgs.inputGeneratorFile=''.join(['tmp_', stringy, '._00001.events.tar.gz'])

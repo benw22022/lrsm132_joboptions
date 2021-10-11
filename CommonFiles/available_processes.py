@@ -34,7 +34,7 @@ def check_lep(lep):
     raise ValueError
 
 
-def define_process(lep1, lep2=None, scatter_type="WRWR", excl_higgs=True, light_jets=False, model="MLRSM"):
+def define_process(lep1, lep2=None, scatter_type="WRWR", excl_higgs=True, light_jets=False, model="lrsm_1_3_2_UFO"):
     """
     Automaticaly generates a partial MadGraph command script defining a channel to generate
     Args:
@@ -48,7 +48,7 @@ def define_process(lep1, lep2=None, scatter_type="WRWR", excl_higgs=True, light_
                                       in any diagrams in the process (at leading order)
         light_jets (bool) (optional): Exclude top and bottom flavour quarks from final state. Default is False
                                       Option was added to test consistancy with HeavyN Model but shouldn't be used
-        model (str) (optional): Model UFO to be used - default is the full MLRSM
+        model (str) (optional): Model UFO to be used - dlrsm_1_3_2_UFO
     Returns:
         command (str): A partial MadGraph command defining a process to generate
     Raises:
@@ -75,14 +75,14 @@ def define_process(lep1, lep2=None, scatter_type="WRWR", excl_higgs=True, light_
     # Exclude particles    
     excluded_particles = ""
     if excl_higgs:
-        excluded_particles += "bsmhiggs" 
+        excluded_particles += "HPC=0" 
     if scatter_type == "WRWR":
         excluded_particles += " w+ w-"  
     if scatter_type == "WLWL":
         excluded_particles += " w2+ w2-"
 
     # Define the process to generate
-    process = "generate p p > {0}+ {1}+ j j / {2} \nadd process p p > {0}- {1}- j j / {2}".format(lep1, lep2, excluded_particles)
+    process = "generate p p > {0}+ {1}+ j j / {2} \nadd process p p > {0}- {1}- j j / {2} ".format(lep1, lep2, excluded_particles)
     process += "\noutput -f -nojpeg"
 
     # Process full command
@@ -90,7 +90,6 @@ def define_process(lep1, lep2=None, scatter_type="WRWR", excl_higgs=True, light_
 """
 import model {0}
 define p = u c d s u~ c~ d~ s~ g
-define bsmhiggs h h2 h02 h03 h+ hp2 hl++ hr++ h3 a02 h- hm2 hl-- hr--
 {1}
 {2}
 """.format("lrsm_1_3_2_UFO", jet_definition, process)
@@ -113,35 +112,15 @@ def define_schannel_process(lep):
     if lep == "ta":
         neutrino = "n3"
 
-    # process = \
-    # """
-    # import model MLRSM
-    # define p = g u c d s b t u~ c~ d~ s~ b~ t~
-    # define j = g u c d s b t u~ c~ d~ s~ b~ t~
-    # define l+ = {0}
-    # define l- = {1}
-    # define w2 = w2+ w2-
-    # define n = {2}
-    # define l = l+ l-
-    # define rm = all /w2
-    # define rm = rm /n
-    # define rm = rm /p
-    # define rm = rm /l
-    # generate p p > w2, (w2 > l+ n , (n > l+ j j /rm)) @1
-    # output -f -nojpeg
-    # add process p p > w2, (w2 > l- n , (n > l- j j /rm)) @2
-    # """.format(lep_plus, lep_minus, neutrino)
-
     process  =\
     """
     import model lrsm_1_3_2_UFO
     define p = g u c d s b t u~ c~ d~ s~ b~ t~
     define j = g u c d s b t u~ c~ d~ s~ b~ t~
-    define w2 = w2+ w2-
-    define bsmhiggs h h2 h02 h03 h+ hp2 hl++ hr++ h3 a02 h- hm2 hl-- hr--
-    generate p p > {1} {0}+, {1} > {0}+ j j / w+ w- bsmhiggs
-    add process p p > {1} {0}-, {1} > {0}- j j / w+ w- bsmhiggs
+    generate p p > {1} {0}+, {1} > {0}+ j j
+    add process p p > {1} {0}-, {1} > {0}- j j 
     output -f -nojpeg
+    compute_widths all
     """.format(lep, neutrino)
 
     return process
