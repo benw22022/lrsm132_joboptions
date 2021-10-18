@@ -87,7 +87,7 @@ class Bewteen0And1Action(argparse.Action):
     A helper class to enforce numbers between 0 and 1 in arguement parser
     """
     def __call__(self, parser, namespace, values, option_string=None,  number=0):
-        if 0 <= values <= 1:
+        if -0.1 > values or values > 1.1:
             parser.error("Argument {0} must be between 0 and 1".format(option_string))
 
         setattr(namespace, self.dest, values)
@@ -122,18 +122,29 @@ def main():
     parser.add_argument("-nevents", help="Number of events to generate", action=GreaterThanNumberAction, type=int, default=10000)
     parser.add_argument("-randomN", help="Random seed for MC Generator", action=GreaterThanNumberAction, type=int, default=123456)
     parser.add_argument("-batch", help="Run on batch system", type=bool, default=False)
+    parser.add_argument("-release", help="Athena release version", type=str, default="21.6.82")
     parser.add_argument("-testmatch", help="Extend the time on batch system to 3 days", type=bool, default=False)
     args = parser.parse_args()
+
+
+    # Check that Athena release isn't blacklisted
+    with open("/cvmfs/atlas.cern.ch/repo/sw/Generators/MC16JobOptions/common/BlackList_caches.txt", 'r') as file:
+        for line in file:
+            split_Line = line.split(',')
+            if args.release in split_Line[1]:
+                print(f"generate_MLRSM.py: ERROR -- Athena release {args.release} is blacklisted due to {split_Line[2:]}")
+                print(f"generate_MLRSM.py: ERROR -- Please select a different Athena release")
+                return 1
 
     # Command to setup enviroment
     setup_command = \
 """
-export PYTHONPATH="/afs/cern.ch/work/b/bewilson/models":$PYTHONPATH
+# export PYTHONPATH="/afs/cern.ch/work/b/bewilson/models":$PYTHONPATH # For non-ATLAS models
 export ATLAS_LOCAL_ROOT_BASE=/cvmfs/atlas.cern.ch/repo/ATLASLocalRootBase
 source ${ATLAS_LOCAL_ROOT_BASE}/user/atlasLocalSetup.sh
-source $AtlasSetup/scripts/asetup.sh 21.6.57,AthGeneration            
+source $AtlasSetup/scripts/asetup.sh ATHRELEASE, AthGeneration            
 export ATHENA_PROC_NUMBER=8 \n
-"""
+""".replace("ATHRELEASE", args.release)
 
     # Set directory to run in
     run_dir = "../run"
@@ -204,10 +215,10 @@ export ATHENA_PROC_NUMBER=8 \n
         os.system(f"cp {JO_path} {run_path}/JO")
 
         # Work out what to call the outfile. For compactness just write the maximal mixing value to file name
-        mixing_arg = ""
+        mixing_arg = 0.0
         if max([args.VKe, args.VKmu, args.VKta]) != 0:
-            mixing_arg = f"_{max([args.VKe, args.VKmu, args.VKta])}"
-        outfile = f"mc.MGPy8EG_lrsm132_{args.channel}_{args.MW2}_{args.MN1}_{args.MN2}_{args.MN3}{mixing_arg}.EVNT.root"
+            mixing_arg = f"{max([args.VKe, args.VKmu, args.VKta])}"
+        outfile = f"mc.MGPy8EG_lrsm132_{args.channel}_{args.MW2}_{args.MN}_{args.tanb}_{mixing_arg}.EVNT.root"
         
         # Work out command to run and change directory to run directory
         print(f"generate_MLRSM.py: INFO - Generating channel = {args.channel}, MW2 = {args.MW2}TeV, MN1 = {args.MN1}TeV, MN2 = {args.MN2}TeV, MN3 = {args.MN3}TeV")
@@ -220,10 +231,12 @@ export ATHENA_PROC_NUMBER=8 \n
         if args.batch:  
             # If generation is to be done on HT Condor System
             make_batch_exe(full_command, transfer_dir="/eos/user/b/bewilson/EVNT_samples/"+outfile.replace(".root", ""))
+            batch_name = outfile.replace(".root", "")
+            batch_name = f"generate_MLRSM.py:{batch_name}"
             if args.testmatch:
-                os.system(f"condor_submit -batch-name MLRSM_Generation htc_generation_long.submit")
+                os.system(f"condor_submit -batch-name {batch_name} htc_generation_long.submit")
             else:
-                os.system(f"condor_submit -batch-name MLRSM_Generation htc_generation.submit")
+                os.system(f"condor_submit -batch-name {batch_name} htc_generation.submit")
         else:
             # Otherwise generate locally
             os.system(full_command)

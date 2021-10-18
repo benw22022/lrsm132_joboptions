@@ -8,7 +8,7 @@ ______________________________________________________________________________
 Joboption file for Athena Generation adaped from mc.aMCPy8EG_HeavyN_mumu_mN1TeV.py
 by Jonas Neundorf 
 See: https://gitlab.cern.ch/atlas-phys/exot/lpx/exot-2020-06-projects/heavynjoboptions/-/blob/master/502xxx/502579/mc.aMCPy8EG_HeavyN_mumu_mN1TeV.py
-Created on 11/10/2021 11:36:44
+Created on 11/10/2021 11:47:10
 @author: benwi
 """
 

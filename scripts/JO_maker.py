@@ -9,6 +9,7 @@ import sys
 import os
 import errno
 import argparse
+import cmath
 from datetime import datetime
 from CommonFiles.available_processes import available_processes
 import scripts.decay_width_calculator as dwc
@@ -110,12 +111,25 @@ def template_JO(channel, MW2, MN1, MN2, MN3, VKe, VKmu, VKta, tanb, dsid=None, W
         additional_opts += "\nHiggs sector included in simulation"
 
     job_title = f"Job option for MLRSM p p -> {lep} {lep} j j (MW2 = {MW2}TeV,  MN1 = {MN1}TeV, MN2 = {MN2}TeV, MN3 = {MN3}TeV) {additional_opts}"
-    job_title += f"\nMixing parameters: VKe = {VKe}   VKmu = {VKmu}   VKta = {VKta}    tanb = {tanb} GeV"
+    job_title += f"\nMixing parameters: VKe = {VKe}   VKmu = {VKmu}   VKta = {VKta}    tanb = {tanb}"
     job_title += f"\nDecay Widths are: WW2 = {WW2}    WN4 = {WN4}   WN5 = {WN5}    WN6 = {WN6}"
 
     if dsid is not None:
         job_title += "\nDSISD = {disd}"
 
+
+    # Compute Higgs parameters so that all Higgs are boosted to masses > 20 TeV
+    # See Eq B15-B16 on pg 30 of https://arxiv.org/abs/1607.03504 (Thanks Richard!)
+    mFCNH = MH02 = 20 # TeV
+    gwR = 0.6518075686879135              
+    vR = (MW2 * cmath.sqrt(2)) / gwR
+    alpha1 = gwR**2 * (mFCNH / MW2)**2
+    alpha2 = gwR**2 * (mFCNH / MW2)**2
+    alpha3 = gwR**2 * (mFCNH / MW2)**2
+    rho1 = MH02**2 / (2. * vR**2)
+    rho2 = float(abs((gwR**2 / 4) * (mFCNH / MW2)**2))
+    rho3 = float(abs(6 * rho1 ))
+    rho4 = float(abs((gwR**2 / 4) * (mFCNH / MW2)**2 ))
 
     job_option_script = \
 '''
@@ -150,11 +164,18 @@ MLRSMCommon.parameters_paramcard['decay']['WW2'] = "{11}"    # No idea why these
 MLRSMCommon.parameters_paramcard['decay']['WN1'] = "{12}"    # No idea why these have to be strings - BLAME MadGraph!
 MLRSMCommon.parameters_paramcard['decay']['WN2'] = "{13}"    # No idea why these have to be strings - BLAME MadGraph!
 MLRSMCommon.parameters_paramcard['decay']['WN3'] = "{14}"    # No idea why these have to be strings - BLAME MadGraph!
-MLRSMCommon.parameters_runcard['lhaid'] = {15}
+MLRSMCommon.parameters_paramcard['higgsblock']['alpha1'] = {15}
+MLRSMCommon.parameters_paramcard['higgsblock']['alpha2'] = {16}
+MLRSMCommon.parameters_paramcard['higgsblock']['alpha3'] = {17}
+MLRSMCommon.parameters_paramcard['higgsblock']['rho3'] = {18}
+MLRSMCommon.parameters_paramcard['higgsblock']['rho3'] = {19}
+MLRSMCommon.parameters_paramcard['higgsblock']['rho4'] = {20}
+MLRSMCommon.parameters_runcard['lhaid'] = {21}
 
 
 MLRSMCommon.run_evgen(runArgs, evgenConfig, opts)
-'''.format(job_title, todays_date, channel, MW2*1e3, MN1*1e3, MN2*1e3, MN3*1e3, VKe, VKmu, VKta, tanb, str(WW2), str(WN4), str(WN5), str(WN6), lhaid)
+'''.format(job_title, todays_date, channel, MW2*1e3, MN1*1e3, MN2*1e3, MN3*1e3, VKe, VKmu, VKta, tanb, str(WW2), str(WN4), str(WN5), str(WN6), 
+            alpha1, alpha2, alpha3, rho2, rho3, rho4, lhaid)
 
     return job_option_script
 

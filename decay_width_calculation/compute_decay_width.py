@@ -69,6 +69,26 @@ def read_width_from_log(log_file):
     return width
 
 
+def write_batch_script(args):
+    current_dir = os.getcwd()
+    command = \
+f"""
+#!/bin/bash
+
+# Activate python 3.7 conda env for MadGraph
+eval "$(conda shell.bash hook)"
+conda activate python37
+echo $CONDA_PREFIX 
+
+# Copy and untar file
+cp /afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/DecayWidthCalc.tar
+tar -xf DecayWidthCalc.tar
+python3 compute_decay_width.py -MW2={args.MW2} -MN={args.MN} -tanb={args.tanb} -VK={args.VK} | tee {args.MW2}_{args.MN}_{args.tanb}_{args.VK}.log
+cp -r * /afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/
+"""
+    with open("htc_compute_decay_widths.sh", 'w') as exe:
+        exe.write(command)
+    
 def main():
 
     # Get user arguements
@@ -83,8 +103,9 @@ def main():
     parser.add_argument("-VKmu", help="Left-Right mixing for muon flavour", action=GreaterThanNumberAction, type=float, default=0.)
     parser.add_argument("-VKta", help="Left-Right mixing for tau flavour", action=GreaterThanNumberAction, type=float, default=0.)
     parser.add_argument("-VK", help="Left-Right mixing, same for all flavours", action=GreaterThanNumberAction, type=float, default=0.)
-    parser.add_argument("-k1", help="Indirectly controls probability of WR-WL vertex: k1 = 246 GeV for no vertex. k1 = 174.09 GeV fully enables WR-WL vertex", 
-                        action=GreaterThanNumberAction, type=float, default=246.)
+    parser.add_argument("-tanb", help="Indirectly controls WR-WL mixing: tanb = 0 for no mixing; tanb = 1 for maximal mixing", 
+                        action=GreaterThanNumberAction, type=float, default=0.)
+    parser.add_argument("-batch", help="Use ht condor batch system (note: requires python 3.7 conda env called python37)", type=bool, default=False)
     args = parser.parse_args()
 
     # TODO: Add input validation
@@ -94,9 +115,18 @@ def main():
     wn5 = -999
     wn6 = -999 
 
+    print("compute_decay_widths.py: INFO -- Computing widths of MW2 and N for:")
+    print(f"compute_decay_widths.py: INFO -- MW2 = {args.MW2}   MN = {args.MN}  tanb = {args.tanb}  VK = {args.VK}")
+
+    if args.batch:
+        os.system("tar -cvf DecayWidthCalc.tar compute_decay_widths.py N_Decay_Width_JO_Maker.py W_Decay_Width_JO_Maker.py MG5_aMC_v3_1_1")
+        write_batch_script(args)
+        os.system("condor_submit -batch-name LRSM_DecayWidthComp htc_decay_width_calc.submit")
+        return 0
+
 
     # Make a new directory to run in 
-    new_dir = f"{args.MW2}_{args.MN}_{args.VK}"
+    new_dir = f"{args.MW2}_{args.MN}_{args.tanb}_{args.VK}"
     os.system(f"mkdir {new_dir}")
     os.chdir(new_dir)
 
@@ -115,36 +145,36 @@ def main():
     args.MN *= 1000 
 
     # Compute the WR decay width
-    WW2_JO = make_WW2_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, k1=args.k1)
+    WW2_JO = make_WW2_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, tanb=args.tanb)
     
     print("compute_decay_widths.py: INFO -- Computing WR decay width")
-    os.system(f"python3 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WW2_JO} | tee MLRSM_WW2.log")
+    os.system(f"python2 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WW2_JO} | tee MLRSM_WW2.log")
     print("compute_decay_widths.py: INFO -- Completed WR decay width computation!")
 
     # Read off the WR decay width - we need this to compute the width of the neutrinos
     ww2 = read_width_from_log("MLRSM_WW2.log")          
     if ww2 == -999:
-        return 1  
+        return 1 
 
     # Now we can compute the N width - we only need to compute the N4, N5, N6 widths seperately if we have different VKe/mu/ta
     if args.VKe == args.VKmu == args.VKta:
-        WN_JO = make_WN_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, ww2, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, k1=args.k1)
-        os.system(f"python3 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WN_JO} | tee MLRSM_WN.log")
+        WN_JO = make_WN_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, ww2, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, tanb=args.tanb)
+        os.system(f"python2 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WN_JO} | tee MLRSM_WN.log")
         wn = read_width_from_log("MLRSM_WN.log")
         wn4 = wn5 = wn6 = wn
 
     # If we have to handle N4, N5, N6 widths seperately 
     else:
-        WN4_JO = make_WN_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, ww2, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, k1=args.k1, particle='n4')
-        os.system(f"python3 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WN4_JO} | tee MLRSM_WN4.log")
+        WN4_JO = make_WN_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, ww2, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, tanb=args.tanb, particle='n4')
+        os.system(f"python2 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WN4_JO} | tee MLRSM_WN4.log")
         wn4 = read_width_from_log("MLRSM_WN4.log")
 
-        WN5_JO = make_WN_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, ww2, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, k1=args.k1, particle='n5')
-        os.system(f"python3 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WN5_JO} | tee MLRSM_WN5.log")
+        WN5_JO = make_WN_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, ww2, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, tanb=args.tanb, particle='n5')
+        os.system(f"python2 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WN5_JO} | tee MLRSM_WN5.log")
         wn5 = read_width_from_log("MLRSM_WN5.log")
 
-        WN6_JO = make_WN_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, ww2, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, k1=args.k1, particle='n6')
-        os.system(f"python3 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WN6_JO} | tee MLRSM_WN4.log")
+        WN6_JO = make_WN_JO.make_JO(".", args.MW2, args.MN1, args.MN2, args.MN3, ww2, VKe=args.VKe, VKmu=args.VKmu, VKta=args.VKta, tanb=args.tanb, particle='n6')
+        os.system(f"python2 ../MG5_aMC_v3_1_1/bin/mg5_aMC {WN6_JO} | tee MLRSM_WN4.log")
         wn6 = read_width_from_log("MLRSM_WN6.log")
     
     if wn4 == -999 or wn5 == -999 or wn6 == -999:
@@ -166,7 +196,7 @@ def main():
         VKe = {args.VKe}
         VKmu = {args.VKmu} 
         VKta = {args.VKta}
-        k1 = {args.k1}
+        tanb = {args.tanb}
 
     Decay Widths:
         WW2 = {ww2}
@@ -182,7 +212,7 @@ def main():
     while timeout < 10:
         try:
             with open("decay_widths.csv", 'a') as file:
-                file.write(f"\n{args.MW2}, {args.MN1}, {args.MN2}, {args.MN3}, {args.VKe}, {args.VKmu}, {args.VKta}, {args.k1}, {ww2}, {wn4}, {wn5}, {wn6}")
+                file.write(f"\n{args.MW2}, {args.MN1}, {args.MN2}, {args.MN3}, {args.VKe}, {args.VKmu}, {args.VKta}, {args.tanb}, {ww2}, {wn4}, {wn5}, {wn6}")
                 break
         except PermissionError:
             print(f"compute_decay_width.py: WARNING -- decay_widths.csv is already open! Will sleep and try again -- attempt: {timeout}/{10}")

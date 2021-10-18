@@ -75,7 +75,7 @@ def define_process(lep1, lep2=None, scatter_type="WRWR", excl_higgs=True, light_
     # Exclude particles    
     excluded_particles = ""
     if excl_higgs:
-        excluded_particles += "HPC=0" 
+        excluded_particles += "bsmhiggs" 
     if scatter_type == "WRWR":
         excluded_particles += " w+ w-"  
     if scatter_type == "WLWL":
@@ -90,6 +90,7 @@ def define_process(lep1, lep2=None, scatter_type="WRWR", excl_higgs=True, light_
 """
 import model {0}
 define p = u c d s u~ c~ d~ s~ g
+define bsmhiggs h h2 h02 h03 h+ hp2 hl++ hr++ h3 a02 h- hm2 hl-- hr--
 {1}
 {2}
 """.format("lrsm_1_3_2_UFO", jet_definition, process)
@@ -101,7 +102,6 @@ def define_schannel_process(lep):
 
     # Process for producing explicitly s-schannel processes 
     # TODO: Make this work for mixed e-mu, mu-tau ect... states
-    # TODO: This is explicitly WR-WR scattering - should have an option for mixed WR-WL?
 
     lep_plus = lep+"+"
     lep_minus = lep+"-"

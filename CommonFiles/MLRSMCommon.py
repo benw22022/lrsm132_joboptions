@@ -43,13 +43,23 @@ parameters_paramcard = {
         'WN1': 'auto',
         'WN1': 'auto',
         'WN1': 'auto',
+        # 'WH01': 'auto',
+        # 'WA01': 'auto',
+        # 'WHP1': 'auto',
+        # 'WHP2': 'auto',
+        # 'WH02': 'auto',
+        # 'WH03': 'auto',
+        # 'WA02': 'auto',
+        # 'WHPPL': 'auto',
+        # 'WHPPR': 'auto',
     },
     # Sets masses of the WR and the 3 Heavy Neutrinos
     'mass':{
-        'MW1':1e3,
-        'MN1':1e3,
-        'MN1':1e3,
-        'MN1':1e3,
+        'MW1': 1e3,
+        'MN1': 1e3,
+        'MN1': 1e3,
+        'MN1': 1e3,
+        'MH02': 20e3, # Sets Higgs mass scales in this parameterisation
     },
     # Controls Heavy-Light mixing 
     'klrblock':{
@@ -60,6 +70,16 @@ parameters_paramcard = {
     # Sets amount of WL-WR mixing
     'vevs':{
         'tanb': 0
+    },
+    # Set Higgs parameters. Modified by JO so that masses > 20 TeV
+    'higgsblock':{
+        'lambda2': 0,
+        'lambda3': 0,
+        'alpha1': 1,
+        'alpha2': 1,
+        'alpha3': 1,
+        'rho2': 1,
+        'rho3': 1
     }
 }
 

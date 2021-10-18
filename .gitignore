@@ -1,5 +1,5 @@
 # Ignore all junk related to decay width calculation
-*/__pycache__
+*__pycache__*
 */decay_width_calculation/*/*
 *.decay_width_calculation
 *.f
@@ -18,4 +18,16 @@
 *.lhe
 *.root
 *.sh
+*.out
+*.error
+*/py.py
+*.pyc
+*.tar
+*.gz
+*.pyo
+*.txt
+*/test
+*.pkl
 
+# Ignore MadGraph and MG produced dirs (too big)
+*Test_MLRSM_*
