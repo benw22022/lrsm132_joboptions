@@ -6,7 +6,7 @@ error  = generation_$(ClusterID)_$(ProcId).error
 
 Requirements  = (OpSysAndVer == "CentOS7")
 +MyProject    = "af-atlas"
-+JobFlavour   = "testmatch"
++MaxRuntime = 115200
 RequestCpus   = 20
 notify_user   = benjamin.james.wilson@cern.ch
 notification  = Error

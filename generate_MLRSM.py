@@ -16,7 +16,7 @@ args:
     -VKe        : Electron flavour heavy-light mixing parameter
     -VKmu       : Muon flavour heavy-light mixing parameter
     -VKta       : Tau flavour heavy-light mixing parameter
-    -VK         : Sets the mixing value of VKe, VKmu, VKta to the same number (so that you don't have to individually specify them if you don't need to)
+    -VK2        : Sets the mixing value of VKe, VKmu, VKta to the same number (so that you don't have to individually specify them if you don't need to)
     -tanb       : Indirectly controls WL-WR mixing: tanb = 0 for no mixing, tanb = 1 for maximal mixing
 Example:
     To run a DSID -> python3 generate_MLRSM.py -DSID=100001
@@ -28,6 +28,8 @@ import argparse
 import datetime 
 from glob import glob
 import getpass
+import time
+import math
 from CommonFiles.available_processes import available_processes
 from scripts.JO_maker import *
 
@@ -66,7 +68,7 @@ def make_batch_exe(command, transfer_dir=None):
     current_dir = os.getcwd()
     transfer_command = "# No Transfer"
     if transfer_dir is not None:
-        transfer_command = f"mkdir {transfer_dir} \nmv *root* *log* *error* *out* *.py *.sh JO PROC_lrsm_1_3_2_UFO_0/Cards {transfer_dir}"
+        transfer_command = f"mkdir {transfer_dir} \nmv *.EVNT.root* *log* *error* *out* *.py *.sh *MG5_DEBUG* JO PROC_lrsm_1_3_2_UFO_0/Cards {transfer_dir}"
 
     with open("run_generation.sh", "w") as exe:
         exe.write(f"#!/bin/bash \ncp -r {current_dir}/* . \n{command} \n{transfer_command}")
@@ -115,6 +117,7 @@ def main():
     parser.add_argument("-tanb", help="Indirectly controls WR-WL mixing: tanb = 0 for no mixing; tanb = 1 for maximal mixing", 
                         action=Bewteen0And1Action, type=float, default=0)
     parser.add_argument("-WW2", help="Decay width of WR in GeV", type=str, default="auto")
+    parser.add_argument("-WN", help="Decay width of N in GeV", type=str, default="auto")
     parser.add_argument("-WN1", help="Decay width of N4 in GeV", type=str, default="auto")
     parser.add_argument("-WN2", help="Decay width of N4 in GeV", type=str, default="auto")
     parser.add_argument("-WN3", help="Decay width of N4 in GeV", type=str, default="auto")
@@ -147,9 +150,10 @@ export ATHENA_PROC_NUMBER=8 \n
 """.replace("ATHRELEASE", args.release)
 
     # Set directory to run in
-    run_dir = "../run"
+    run_name = f"{args.channel}_{args.MW2}_{args.MN}_{args.tanb}_{args.VK}"
+    run_dir = f"../run-{run_name}"
     if args.batch:
-        run_dir = "../batch"
+        run_dir = f"../batch-{run_name}"
 
         #  Check that user has changed the submit file to their email if they plan on using the batch system
         if getpass.getuser() != "bewilson":
@@ -201,11 +205,16 @@ export ATHENA_PROC_NUMBER=8 \n
                 print("generate_MLRSM.py: INFO - -MN arguement given. Will ignore all -MN1/5/6 arguments")
             args.MN1 = args.MN2 = args.MN3 = args.MN
 
+        # Check if WN arguement has been given to set WN1/5/6
+        if args.WN != 'auto':
+            args.WN1 = args.WN2 = args.WN3 = args.WN
+
         # Check if VK arguement has been given to set VKe/mu/ta to same value
         if args.VK != 0:
             if args.VKe != 0 or args.VKmu != 0 or args.VKta != 0:
                 print("generate_MLRSM.py: INFO - -VK arguement given. Will ignore all -VKe/mu/ta arguments")
             args.VKe = args.VKmu = args.VKta = args.VK
+            # args.VKe = args.VKmu = args.VKta = cmath.sqrt(args.VK)
 
         # Make directory to run in and copy files over
         run_path = make_dir(run_dir)
@@ -218,7 +227,7 @@ export ATHENA_PROC_NUMBER=8 \n
         mixing_arg = 0.0
         if max([args.VKe, args.VKmu, args.VKta]) != 0:
             mixing_arg = f"{max([args.VKe, args.VKmu, args.VKta])}"
-        outfile = f"mc.MGPy8EG_lrsm132_{args.channel}_{args.MW2}_{args.MN}_{args.tanb}_{mixing_arg}.EVNT.root"
+        outfile = f"mc.MGPy8EG_lrsm132_{args.channel}_{args.MW2}_{args.MN}_{args.tanb}_{mixing_arg}_.EVNT.root"
         
         # Work out command to run and change directory to run directory
         print(f"generate_MLRSM.py: INFO - Generating channel = {args.channel}, MW2 = {args.MW2}TeV, MN1 = {args.MN1}TeV, MN2 = {args.MN2}TeV, MN3 = {args.MN3}TeV")
@@ -237,6 +246,11 @@ export ATHENA_PROC_NUMBER=8 \n
                 os.system(f"condor_submit -batch-name {batch_name} htc_generation_long.submit")
             else:
                 os.system(f"condor_submit -batch-name {batch_name} htc_generation.submit")
+            
+            # Experiencing batch system issues with jobs unexpectedly not being submitted/disappearing
+            # I am wondering if it because I am submitting the jobs too quickly?
+            time.sleep(1)
+
         else:
             # Otherwise generate locally
             os.system(full_command)

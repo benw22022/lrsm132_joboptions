@@ -4,6 +4,8 @@ ________________________________________________________________________________
 Dictionary of available processes for MLRSM model
 Incudes functions to easily define new processes, modify the available_processes dict to add new processes
 If run as main will print the currently available processes with options to see the full details
+Note: Do not use compute_widths all if using a model from cvmfs - the will result in an error due to
+cvmfs being read only and compute_widths all will try and modify the param_card.dat
 Author: bewilson
 Date: 17:22 30/03/2021
 """
@@ -120,11 +122,24 @@ def define_schannel_process(lep):
     generate p p > {1} {0}+, {1} > {0}+ j j
     add process p p > {1} {0}-, {1} > {0}- j j 
     output -f -nojpeg
-    compute_widths all
     """.format(lep, neutrino)
 
     return process
 
+
+def w2_to_jets():
+
+    process = \
+"""
+import model lrsm_1_3_2_UFO
+define p = g u c d s b t u~ c~ d~ s~ b~ t~
+define j = g u c d s b t u~ c~ d~ s~ b~ t~
+generate p p > w2, w2 > j j 
+output -f -nojpeg
+launch
+set WW2 auto
+"""
+    return process
 
 available_processes = {
     'pythia':'p p > mu+- mu+- j j',   # for pythia
@@ -156,6 +171,9 @@ available_processes = {
     'eechannel_WRWR_lrsm132': define_process("e", model="lrsm_1_3_2_UFO"),
     'mumuchannel_WRWR_lrsm132': define_process("mu", model="lrsm_1_3_2_UFO"),
     'tautauchannel_WRWR_lrsm132': define_process("tau", model="lrsm_1_3_2_UFO"),
+
+    'w2_to_jets': w2_to_jets(),
+
 }
 
 

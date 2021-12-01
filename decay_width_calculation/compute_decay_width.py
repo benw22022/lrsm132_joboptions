@@ -18,6 +18,7 @@ from glob import glob
 import time
 import W_Decay_Width_JO_Maker as make_WW2_JO
 import N_Decay_Width_JO_Maker as make_WN_JO
+import math
 
 def make_dir(path, extn=""):
     """
@@ -71,24 +72,16 @@ def read_width_from_log(log_file):
 
 def write_batch_script(args):
     current_dir = os.getcwd()
-    command = \
-f"""
-#!/bin/bash
-
-# Activate python 3.7 conda env for MadGraph
-eval "$(conda shell.bash hook)"
-conda activate python37
-echo $CONDA_PREFIX 
-
-# Copy and untar file
-cp /afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/DecayWidthCalc.tar
-tar -xf DecayWidthCalc.tar
-python3 compute_decay_width.py -MW2={args.MW2} -MN={args.MN} -tanb={args.tanb} -VK={args.VK} | tee {args.MW2}_{args.MN}_{args.tanb}_{args.VK}.log
-cp -r * /afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/
-"""
-    with open("htc_compute_decay_widths.sh", 'w') as exe:
+    command = f"#!/bin/bash \n"
+    command += f"cp -r /afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/*.py . \n"
+    command += f"cp -r /afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/MG5_aMC_v3_1_1 . \n"
+    command += f"python3 compute_decay_width.py -MW2={args.MW2} -MN={args.MN} -tanb={args.tanb} -VK={args.VK} | tee {args.MW2}_{args.MN}_{args.tanb}_{args.VK}.log \n"
+    command += f"cp -r *.log /afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/ \n"
+    command += f"cp -r *.txt /afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/ \n"
+    with open("comp_width.sh", 'w') as exe:
         exe.write(command)
-    
+    return 0
+
 def main():
 
     # Get user arguements
@@ -105,6 +98,7 @@ def main():
     parser.add_argument("-VK", help="Left-Right mixing, same for all flavours", action=GreaterThanNumberAction, type=float, default=0.)
     parser.add_argument("-tanb", help="Indirectly controls WR-WL mixing: tanb = 0 for no mixing; tanb = 1 for maximal mixing", 
                         action=GreaterThanNumberAction, type=float, default=0.)
+    parser.add_argument("-clean", help="Delete MadGraph files after running", type=bool, default=True)
     parser.add_argument("-batch", help="Use ht condor batch system (note: requires python 3.7 conda env called python37)", type=bool, default=False)
     args = parser.parse_args()
 
@@ -118,21 +112,24 @@ def main():
     print("compute_decay_widths.py: INFO -- Computing widths of MW2 and N for:")
     print(f"compute_decay_widths.py: INFO -- MW2 = {args.MW2}   MN = {args.MN}  tanb = {args.tanb}  VK = {args.VK}")
 
-    if args.batch:
-        os.system("tar -cvf DecayWidthCalc.tar compute_decay_widths.py N_Decay_Width_JO_Maker.py W_Decay_Width_JO_Maker.py MG5_aMC_v3_1_1")
-        write_batch_script(args)
-        os.system("condor_submit -batch-name LRSM_DecayWidthComp htc_decay_width_calc.submit")
-        return 0
-
 
     # Make a new directory to run in 
     new_dir = f"{args.MW2}_{args.MN}_{args.tanb}_{args.VK}"
     os.system(f"mkdir {new_dir}")
     os.chdir(new_dir)
 
+    if args.batch:
+        #os.system("tar -cvf DecayWidthCalc.tar compute_decay_widths.py N_Decay_Width_JO_Maker.py W_Decay_Width_JO_Maker.py MG5_aMC_v3_1_1")
+        os.system("cp ../htc_decay.submit .")
+        os.system("rm -r decaywidthcomp_*")
+        write_batch_script(args)
+        os.system("chmod +x comp_width.sh")
+        os.system("condor_submit htc_decay.submit")
+        return 0
+
     # Parse arguements
     if args.VK != 0:
-        args.VKe = args.VKmu = args.VKta = args.VK
+        args.VKe = args.VKmu = args.VKta = math.sqrt(args.VK)
     
     if args.MN != -1:
         args.MN1 = args.MN2 = args.MN3 = args.MN
@@ -180,7 +177,11 @@ def main():
     if wn4 == -999 or wn5 == -999 or wn6 == -999:
         return 1
 
-    os.chdir("../")
+    # Clean up after ourselves
+    if args.clean:
+        os.system("rm -r Test_MLRSM_*")
+
+    os.chdir("/afs/cern.ch/work/b/bewilson/lrsm132_joboptions/lrsm132_joboptions/decay_width_calculation/")
 
     # Print summary of results:
     print(\
@@ -203,7 +204,6 @@ def main():
         WN4 = {wn4}
         WN5 = {wn5}
         WN6 = {wn6}
-
     """)
 
     # Now write results to csv file - try 10 times before giving up

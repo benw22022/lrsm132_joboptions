@@ -1,167 +1,153 @@
-# -*- coding: utf-8 -*-
 """
-Decay Width Calculator
-_________________________________________________________________________________
-Analytically calculates the decay width of the right-handed W and Heavy Neutrinos
-Necessary because MadGraph is just a bit useless at calculating these quatities
-itself. 
-Created on Tue May 11 11:37:32 2021
-@author: benwi
+Compute heavy neutrino decay widths in the MLRSM
+_______________________________________________________________________
+I found this paper that has a formula in the appendix, I'm going to see
+if it works
+https://journals.aps.org/prd/pdf/10.1103/PhysRevD.97.015018
 """
 
-import numpy as np
+import cmath
+
+# Fixed params
+Gf = 0.0000116637
+vev = 1/(2**0.25*cmath.sqrt(Gf))
+sw2 = 0.23126
+sw = cmath.sqrt(sw2)
+cw = cmath.sqrt(1 - sw2)
+aEWM1 = 127.9 
+aEW = 1 / aEWM1 
+ee = 2 * cmath.sqrt(aEW) * cmath.sqrt(cmath.pi)
+gw = ee / sw
+gwR = gw
+gwL = gwR
+w1_mass = 80.379
+z1_mass = 91.1876
+sm_higgs_mass = 125.1
+cos_thetaW = w1_mass / z1_mass
+sin_thetaW = cmath.sqrt(1 - cos_thetaW**2)
+gamma_w1_to_dijets = 2.731
+gamma_w1 = 2.085
+top_mass = 172.76
 
 
-Pi = np.pi
-I = 1
+def gamma_N_to_lWR_onshellWR(n_mass, w2_mass):
+    """
+    Formula for N ->  WR l if WR is on shell
+    https://link.springer.com/content/pdf/10.1007/JHEP03(2016)049.pdf
+    Not valid for top quark processes
+    """
+    x = (n_mass / w2_mass)**2
 
-t12 = 13.04 * Pi / 180
-t13 = 0.201 * Pi / 180
-t23 = 2.38 * Pi / 180
-
-t12 = np.arcsin(0.221)
-t13 = np.arcsin(0.0035)
-t23 = np.arcsin(0.041)
-
-delta13 = 1.20
-
-
-V12 = np.array([[np.cos(t12), np.sin(t12), 0],
-                [-np.sin(t12), np.cos(t12), 0],
-                [0, 0, 1]])
-
-
-V23 = np.array([[1, 0, 0], 
-                [0, np.cos(t23), np.sin(t23)], 
-                [0, -np.sin(t23), np.cos(t23)]])
-
-
-V13 = np.array([[np.cos(t13), 0, np.sin(t13)*np.exp(-I * delta13)], 
-                [0, 1, 0], 
-                [-np.sin(t13)*np.exp(I* delta13), 0, np.cos(t13)]])
-
-
-VCKM = np.matmul(np.matmul(V23,V13) , V12)
-
-eq = np.sqrt(4 * Pi/127.9)
-Mw = 80.399
-Gamma_w = 2.08
-Mz = 91.1876
-Gamma_z = 2.4952
-sw = np.sqrt(0.2311)
-cw = np.sqrt(1 - sw**2)
-c2w = cw**2 - sw**2
-
-c2w = (Mw / Mz)**2
-
-cw = np.sqrt(c2w)
-sw = np.sqrt(1 - c2w)
-g = eq / sw
-gR = g
-mh = 125.3
-v = 246.2
-mt = 173.2
-beta = 0
-alpha = beta - Pi/2
-
-def MzR(MwR):
-    return MwR * cw / np.sqrt(c2w)
-
-# Sample Value of VK mixing squared
-#VK = 0.03
-#VnLs = VK**2
-
-# N decay width calculations
-def Gamma_NLWR3(M, MwR):
-    return 3 * gR**4 / (2048*Pi**3) * (M**5 / MwR**4) * np.heaviside(MwR - M, 0.5);
-
-def Gamma_NLZR3(M, MwR, VnLs):
-    return 3 * gR**4 / (4096* Pi**3) * cw**8 / (c2w**2) * (M**5 / MzR(MwR)**4) * VnLs *  np.heaviside(MzR(MwR) - M, 0.5)
-  
-def Gamma_NLWR2(M, MwR):
-    return g**2 / (64 * Pi) * ((M**2 - MwR**2)**2 * (M**2 + 2 * MwR**2)) / (M**3 * MwR**2) * np.heaviside(M - MwR, 0.5)
-
-def Gamma_NLW(M, VnLs):
-    return g**2 / (64 * Pi) * VnLs * ((M**2 - Mw**2)**2 * (M**2 + 2 * Mw**2)) / (M**3 * Mw**2) * np.heaviside(M - Mw, 0.5)
-
-def Gamma_NLZ(M, VnLs):
-    return g**2 / (128 * Pi * cw**2) * VnLs * ((M**2 - Mz**2)**2 * (M**2 + 2 * Mz**2)) / (M**3 * Mz**2) * np.heaviside(M - Mz, 0.5)
-
-def Gamma_NLH(M, VnLs):
-    return  g**2 / (128 * Pi) * VnLs * (M**2 - mh**2)**2 / (M * Mw**2) * np.heaviside(M - mh, 0.5)
-
-def Gamma_Ntot(M, MwR, VnLs):
-    if M < MwR:
-        return 2 * (Gamma_NLW(M, VnLs) + Gamma_NLZ(M, VnLs) + Gamma_NLH(M, VnLs) + Gamma_NLWR3(M, MwR))        
-    else:
-        return 2*(Gamma_NLW(M, VnLs) + Gamma_NLZ(M, VnLs) + Gamma_NLH(M, VnLs) + Gamma_NLWR2(M, MwR))
-
-
-
-# W Decay Width calculations
-def Gamma_Nl(M, MwR):
-    return (gR**2 / (48* Pi)) * MwR * (1 + (M**2 / (2 * MwR**2))) * (1 - (M**2 / MwR**2))**2 * np.heaviside(MwR - M, 0.5)
+    partial_width = (gwR**4 / (2048 * cmath.pi**3)) * (n_mass * 12 / x) * \
+                    (1 + (x / 2) + (x**2 / 6) + ((1 - x) / x)*cmath.log10(1 - x))
     
-def Gamma_ud(MwR):
-    return (gR**2 / (16* Pi)) * MwR * np.abs(VCKM[0][0])**2
+    return partial_width
 
-def Gamma_us(MwR):
-    return (gR**2 / (16 * Pi)) * MwR * np.abs(VCKM[0][1])**2
+def gamma_N_to_lW1(n_mass, vk):
+    """
+    Partial width for N > l WL
+    https://link.springer.com/content/pdf/10.1007/JHEP03(2016)049.pdf
+    """
 
-def Gamma_ub(MwR):
-    return (gR**2 / (16 * Pi)) * MwR * np.abs(VCKM[0][2])**2
+    sxi = 0 # set sin(xi) to zero for simplicity
 
-def Gamma_cd(MwR):
-    return (gR**2 / (16 * Pi )) * MwR * np.abs(VCKM[1][0])**2
+    prefactor1 = (gwL**2 * vk**2 + gwR**2 * sxi**2) / (64 * cmath.pi)
+    prefactor2 = n_mass**3 / w1_mass**2
+    prefactor3 = (1 - (w1_mass**2 / n_mass**2))**2
+    prefactor4 = (1 + 2*(w1_mass**2 / n_mass**2))
+    w1_to_jets_BR = 0.676
 
-def Gamma_cs(MwR):
-    return (gR**2 / (16 * Pi)) * MwR * np.abs(VCKM[1][1])**2
+    return prefactor1 * prefactor2 * prefactor3 * prefactor4 * w1_to_jets_BR
 
-def Gamma_cb(MwR):
-    return (gR**2 / (16 * Pi)) * MwR * np.abs(VCKM[1][2])**2;
+def gamma_N_to_lWR_offshellWR(n_mass, w2_mass, vk):
+    """
+    3 body neutrino decay width assuming very off shell WR & ZR
+    https://arxiv.org/pdf/1306.2342.pdf
+    Note: Is Approximate
+    """
 
-def Gamma_td(MwR):
-    return (gR**2 / (16 * Pi)) * MwR * (1 + (mt**2 / (2 * MwR**2))) * (1 - (mt**2 / MwR**2))**2 * np.abs(VCKM[2][0])**2
+    return ((3 * gwR**4) / (2048 * cmath.pi**3)) * (n_mass**5) / (w2_mass**4)
+
+def gamma_N_to_nuZ(n_mass, vk):
+    """Width of N -> Z nu"""
+    prefactor1 = (gw**2 * vk**2) / (128 * cmath.pi * cos_thetaW**2)
+    prefactor2 = n_mass**3 / z1_mass**2
+    prefactor3 = (1 - z1_mass**2 / n_mass**2)
+    prefactor4 = (1 + 2 * (z1_mass**2 / n_mass**2))**2
+    return prefactor1 * prefactor2 * prefactor3 * prefactor4
+
+def gamma_N_to_nuh(n_mass, vk):
+    """Width of N -> nu h"""
+    prefactor1 = (gw**2 * vk**2) / (128 * cmath.pi)
+    prefactor2 = n_mass**3 / w1_mass**2
+    prefactor3 = (1 - sm_higgs_mass**2 / n_mass**2)
+    return prefactor1 * prefactor2 * prefactor3
+
+def z2_mass(w2_mass):
+    return (cw * w2_mass * cmath.sqrt(2)) / cmath.sqrt(1 - 2 * sw**2)
+
+def gamma_N_to_nuZR(n_mass, w2_mass):
+    """Width of N -> nu ZR (approximate)"""
+    prefactor1 = (3 * gwR**4 )/ (4096 * cmath.pi**3)
+    prefactor2 = cos_thetaW**8 / (cos_thetaW**2 - sin_thetaW**2)**2
+    prefactor3 = n_mass**5 / z2_mass(w2_mass)**4
+    return prefactor1 * prefactor2 * prefactor3
+
+def gamma_N_to_tbar(n_mass, w2_mass):
+    """ Width of N -> t bbar"""
+    x = (n_mass / w2_mass)**2
+    y = top_mass**2 / n_mass**2
+    prefactor1 = (gwR**4 / (2048 * cmath.pi**3)) * n_mass
+    prefactor2 = 12 / x
+    prefactor3 = (1 - y)
+    prefactor3 += -(x / 2) * (1 - y**2)
+    prefactor3 += -(x**2 / 6) * (1 - 1.5 * y + 1.5 * y**2 - y**3)
+    prefactor3 += -(5 * x**3 * y) * (1 - y**2) / 8
+    prefactor3 += (x**4 * y**2 * (1 - y)) / 4
+    prefactor3 += -((x**3 * y**2) / 4) * (4 + x**2 * y) * cmath.log(y)
+    prefactor3 += ((1 - x) / x) * cmath.log((1 - x) / (1 - x * y)) * (1 - ((x * y) / 4) * (4 + x + x**2 - x**3 * y**2 * (1 + x)))
+
+    return prefactor1 * prefactor2 * prefactor3
+
+
+def total_WRWL_N_width(n_mass, w2_mass, vk):
+    """
+    Calculate total N decay width for N -> l j j
+    Use different formulas for MN < MW2 and MN > MW2
+    """
+    N_to_WR_width = gamma_N_to_lWR_offshellWR(n_mass, w2_mass, vk)
+
+    if n_mass < w2_mass:
+        N_to_WR_width = gamma_N_to_lWR_onshellWR(n_mass, w2_mass) + gamma_N_to_tbar(n_mass, w2_mass)
+
+    return N_to_WR_width + gamma_N_to_lW1(n_mass, vk) + gamma_N_to_nuZ(n_mass, vk) +  gamma_N_to_nuZ(n_mass, vk) + gamma_N_to_nuZR(n_mass, w2_mass)
+
+def gamma_WR_to_dijets(w2_mass):
+    """
+    Partial width of W2 -> u dbar
+    (not valid for btbar)
+    """
+    return ((gwR**2) / (16 * cmath.pi)) * w2_mass
+
+def gamma_WR_to_tbar(w2_mass):
+    """
+    Partial width of W2 -> t bbar
+    """
+    prefactor1 = (1 + 0.5 * (top_mass**2 / w2_mass**2))
+    prefactor2 = ((1 - (top_mass**2 / w2_mass**2)))**2
+    return gamma_WR_to_dijets(w2_mass) * prefactor1 * prefactor2
     
-def Gamma_ts(MwR):
-    return (gR**2 / (16 * Pi)) * MwR * (1 + (mt**2 / (2*MwR**2))) * (1 - (mt**2 / MwR**2))**2 * np.abs(VCKM[2][1])**2
 
-def Gamma_tb(MwR):
-    return (gR**2 / (16 * Pi)) * MwR * (1 + (mt**2 / (2 * MwR**2))) * (1 - (mt**2 / MwR**2))**2 * np.abs(VCKM[2][2])**2
+def gamma_WR_to_Nl(w2_mass, n_mass):
+    """
+    Partial width for WR -> N l 
+    """
+    prefactor1 = ((gwR**2) / (48 * cmath.pi)) * w2_mass
+    prefactor2 = (1 + 0.5 * (n_mass**2 / w2_mass**2))
+    prefactor3 = ((1 - (n_mass**2 / w2_mass**2)))**2
 
-def Gamma_WZ(MwR):
-    return (gR**2/(192 * Pi)) * MwR * (np.sin(2 * beta))**2 * (1 - 2 * (Mw**2 + Mz**2) / (MwR**2) + (Mw**2 - Mz**2)**2 / (
-                                                    MwR**4))**(3/2) * (1 + 10 * (Mw**2 + Mz**2) / (MwR**2) + (Mw**4 + 10 * Mw**2 * Mz**2 + Mz**4) / (MwR**4))
+    return prefactor1 * prefactor2 * prefactor3
 
-def Gamma_Wh(MwR):
-    return (gR**2 / (192 * Pi)) * MwR * (np.cos(alpha) + beta)**2 * (1 - 2 * (Mw**2 + mh**2) / (MwR**2) + (Mw**2 - mh**2)**2 / 
-                                                                     (MwR**4))**(1/2) * (1 + (10*Mw**2 - 2*mh**2) / (MwR**2) + (Mw**2 - mh**2)**2 / (MwR**4))
+def total_WR_width(w2_mass, n_mass):
 
-def Gamma_Wtot(M, MwR):
-    return 3 * Gamma_Nl(M, MwR) + Gamma_ud(MwR) + Gamma_us(MwR) + Gamma_ub(MwR) + Gamma_cd(MwR) + Gamma_cs(MwR) + \
-            Gamma_cb(MwR) + Gamma_td(MwR) + Gamma_ts(MwR) + Gamma_tb(MwR) + Gamma_WZ(MwR) + Gamma_Wh(MwR)
-
-def calculate_decay_widths(MwR, MN, VK):
-    VnLs = VK**2
-    return  Gamma_Wtot(MN, MwR), Gamma_Ntot(MN, MwR, VnLs)
-
-
-if __name__ == "__main__":
-
-    VnLs = 0.03**2
-
-    # Validated N Decay Width
-    print(f"Gamma N: MN = 1.2 TeV MwR = 10 TeV {Gamma_Ntot(1200, 10000, VK)} -- Theorist Result = {2.10084}")
-    print(f"Gamma N: MN = 2.4 TeV MwR = 10 TeV {Gamma_Ntot(2400, 10000, VK)} -- Theorist Result = {16.8763}")
-    print(f"Gamma N: MN = 28 TeV MwR = 10 TeV {Gamma_Ntot(28000, 10000, VK)} -- Theorist Result = {27755.8}")
-    print(f"Gamma N: MN = 28 TeV MwR = 10 TeV {Gamma_Ntot(9000, 100000, VK)} -- Theorist Result = {891.085}")
-    
-        
-    # Verify Results of WR decay width
-    print(f"Gamma WR: MN = 1.2 TeV MwR = 2.4 TeV {Gamma_Wtot(1200, 2400)} -- Theorist Result = {76.3857}")
-    print(f"Gamma WR: MN = 2.4 TeV MwR = 1.2 TeV {Gamma_Wtot(2400, 1200)} -- Theorist Result = {31.2787}")
-    print(f"Gamma WR: MN = 90 TeV MwR = 10 TeV {Gamma_Wtot(90000, 10000)} -- Theorist Result = {263.359}")
-
-
-
-  
+   return gamma_WR_to_dijets(w2_mass) + gamma_WR_to_tbar(w2_mass) + gamma_WR_to_Nl(w2_mass, n_mass)
